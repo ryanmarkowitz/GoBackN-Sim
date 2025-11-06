@@ -1,0 +1,25 @@
+# Python
+venv/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Qt / build stuff
+build/
+dist/
+*.pro.user
+*.qmake.stash
+*.qmlproject.user
+.qtc/
+.qmake.cache
+*.obj
+*.o
+*.so
+*.dll
+*.dylib
+
+# IDE
+.vscode/
+.idea/
