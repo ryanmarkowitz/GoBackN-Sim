@@ -10,6 +10,11 @@ class SettingsWindow(qtw.QWidget, Ui_w_settings):
         super().__init__()
         self.setupUi(self)
 
+        # set a locked height for the whole component while allowing for horizontal responsiveness
+        self.setFixedHeight(480)  # lock height
+        self.setSizePolicy(qtw.QSizePolicy.Expanding, qtw.QSizePolicy.Fixed)
+
+
         # if slider is changed by user, update 
         self.sl_prop_delay.valueChanged.connect(self.update_prop_delay)
         self.sl_re_timer.valueChanged.connect(self.update_re_timer)
