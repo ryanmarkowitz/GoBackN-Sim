@@ -3,8 +3,8 @@ from PySide6 import QtWidgets as qtw
 from PySide6 import QtGui as qtg
 
 class Packet(qtw.QPushButton):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, parent=None):
+        super().__init__(parent)
 
         # allow this packet to be animated
         self.anim = qtc.QPropertyAnimation(self, b"pos")
@@ -30,5 +30,6 @@ class Packet(qtw.QPushButton):
     
     def kill(self):
         self.killed = True
+        self.anim.stop()
         self.setStyleSheet("background-color: red;") # turn the packet red to show it has been killed
         self.fade_out_and_delete() # fade out and delete the packet

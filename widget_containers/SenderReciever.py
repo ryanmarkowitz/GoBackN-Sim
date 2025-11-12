@@ -19,7 +19,8 @@ class SenderReciever(qtw.QWidget, Ui_w_sender_reciever):
         self.pktLose = False # boolean that will predetermine if a packet should be lost or not
         self.ACKLose = False # boolean that will predetermine if an ACK should be lost or not
         self.sending = False # boolean that will determine if the sender is currently sending a packet
-        self.ACKready = False
+        self.ACK_ready_flag = False
+        self._is_deleted = False # flag to track if object is being deleted
         
         # initialize sender and reciever numbers
         self.sender_num = 0
@@ -35,14 +36,14 @@ class SenderReciever(qtw.QWidget, Ui_w_sender_reciever):
         if self.isActive:
             if self.sending == False:
                 self.sending = True
-                self.ACK_ready = False # reset this flag assuming reciever never got the packet
+                self.ACK_ready_flag = False # reset this flag assuming reciever never got the packet
                 prop_delay = prop_delay *.1 # get proper propagation delay
                 re_timer = re_timer *.1 # get proper retransmission timer
-                # create a packet and set the container to self
-                pkt = Packet(parent = self)
+                # create a packet and set the container to parent panel
+                pkt = Packet(parent = self.parent())
                 # Get coordinates for where packet should start and end for animation
-                start = self.pb_sender.mapTo(self, qtc.QPoint(self.pb_sender.width(), self.pb_sender.height()//2))
-                end = self.pb_reciever.mapTo(self, qtc.QPoint(self.pb_reciever.width(), self.pb_reciever.height()//2))
+                start = self.pb_sender.mapTo(self.parent(), qtc.QPoint(self.pb_sender.width()//2, self.pb_sender.height()//2))
+                end = self.pb_reciever.mapTo(self.parent(), qtc.QPoint(self.pb_reciever.width()//2, self.pb_reciever.height()//2))
 
                 # propagation delay is in terms of seconds, setDuration function expects ms
                 pkt.anim.setDuration(prop_delay*1000) # set duration of animation to the propagation delay
@@ -50,7 +51,7 @@ class SenderReciever(qtw.QWidget, Ui_w_sender_reciever):
 
                 pkt.move(start) # move packet to start position
                 pkt.show() # show packet on screen
-                pkt._raise() # raise packet above all other widgets (so it is visible
+                pkt.raise_() # raise packet above all other widgets (so it is visible
 
                 # set start and end of animation
                 pkt.anim.setStartValue(start)
@@ -60,16 +61,16 @@ class SenderReciever(qtw.QWidget, Ui_w_sender_reciever):
                 qtc.QTimer.singleShot(re_timer*1000, lambda: self.send_retransmission(pkt, prop_delay, re_timer, per_pkt_loss))
 
                 # with a given percentage chance that a packet should be dropped, drop that packet halfway through the animation
-                should_drop = (random.randint(0,100) <= per_pkt_loss) # determine if the packet should be dropped
+                should_drop = (random.randint(1,100) <= per_pkt_loss) or self.pktLose # determine if the packet should be dropped
                 if should_drop:
                     # Wait for half the moving animation to finish, then drop the packet
                     pkt.killed = True
-                    qtc.QTimer.singleShot(prop_delay*1000/2, lambda: pkt.fade_out_and_delete())
+                    qtc.QTimer.singleShot(prop_delay*1000/2, lambda: pkt.kill())
                     
                     qtc.QTimer.singleShot(prop_delay*1000/2, lambda: pkt.setStyleSheet("background-color: red;"))
                 
                 pkt.anim.start() # start animation
-                pkt.anim.finished.connect(lambda: self.ACKready(pkt))
+                pkt.anim.finished.connect(lambda: self.packet_arrived(pkt))
 
     def send_ACK(self, prop_delay:int, per_pkt_loss:int, ack_num:int):
         if self.isActive:
@@ -87,12 +88,12 @@ class SenderReciever(qtw.QWidget, Ui_w_sender_reciever):
 "}\n"
 "") # turn reciever light blue to show it sent an ACK
             prop_delay = prop_delay *.1 # get proper propagation delay
-            # create a packet and set the container to self
-            pkt = Packet(parent = self)
-            pkt.setText("ACK #"+str(ack_num)) # send the correct ACK
+            # create a packet and set the container to parent panel
+            pkt = Packet(parent = self.parent())
+            pkt.setText("ACK #"+str(ack_num-1)) # send the correct ACK
             # Get coordinates for where packet should start and end for animation
-            start = self.pb_reciever.mapTo(self, qtc.QPoint(self.pb_reciever.width(), self.pb_reciever.height()//2))
-            end = self.pb_sender.mapTo(self, qtc.QPoint(self.pb_sender.width(), self.pb_sender.height()//2))
+            start = self.pb_reciever.mapTo(self.parent(), qtc.QPoint(self.pb_reciever.width()//2, self.pb_reciever.height()//2))
+            end = self.pb_sender.mapTo(self.parent(), qtc.QPoint(self.pb_sender.width()//2, self.pb_sender.height()//2))
 
             # propagation delay is in terms of seconds, setDuration function expects ms
             pkt.anim.setDuration(prop_delay*1000) # set duration of animation to the propagation delay
@@ -100,14 +101,14 @@ class SenderReciever(qtw.QWidget, Ui_w_sender_reciever):
 
             pkt.move(start) # move packet to start position
             pkt.show() # show packet on screen
-            pkt._raise() # raise packet above all other widgets (so it is visible)
+            pkt.raise_() # raise packet above all other widgets (so it is visible)
 
             # set start and end of animation
             pkt.anim.setStartValue(start)
             pkt.anim.setEndValue(end)
 
             # with a given percentage chance that a packet should be dropped, drop that packet halfway through the animation
-            should_drop = (random.randint(0,100) <= per_pkt_loss) # determine if the packet should be dropped
+            should_drop = (random.randint(1,100) <= per_pkt_loss) # determine if the packet should be dropped
             if should_drop:
                 # Wait for half the moving animation to finish, then drop the packet
                 pkt.killed = True
@@ -119,7 +120,7 @@ class SenderReciever(qtw.QWidget, Ui_w_sender_reciever):
     
     # If the sender never recieved an ACK resend the packet
     def send_retransmission(self, pkt: Packet, prop_delay:int, re_timer:int, per_pkt_loss:int):
-        if self.isActive:
+        if self.isActive and not self._is_deleted:
             self.sending = False
             self.send_packet(prop_delay, re_timer, per_pkt_loss)
         pass
@@ -194,14 +195,16 @@ class SenderReciever(qtw.QWidget, Ui_w_sender_reciever):
 "}\n"
 "")
 
-    def ACK_ready(self, pkt:Packet):
-        if not pkt.killed:
+    def packet_arrived(self, pkt:Packet):
+        if not pkt.killed and not self._is_deleted:
             self.pkt_arr.emit(self.sender_num)
+            pkt.fade_out_and_delete()
     
     # If sender recieved the ACK and the ACK is the same number as the sender number, the handshake was completed
     def receivedACK(self, pkt:Packet):
-        if not pkt.killed:
+        if not pkt.killed and not self._is_deleted:
             self.ACK_arr.emit(self.ACKrecieved,self.sender_num)
+            pkt.fade_out_and_delete()
         
 
 # This class will create a vertical panel of all our packets that need to be sent
@@ -214,7 +217,7 @@ class SenderRecieverPanel(qtw.QWidget):
         # create vertical box layout for all sender receiver components
         self.vbox = qtw.QVBoxLayout(self)
         self.items = [] # list that will hold all the SenderReciever objects
-        self.cur_ACK = 0 # index of the current ACK that is being sent\
+        self.cur_ACK = 1 # index of the current ACK that is being sent
         self.base = 0 # base of the window
         self.num_packets = num_packets
         self.setPackets()
@@ -226,9 +229,10 @@ class SenderRecieverPanel(qtw.QWidget):
 
         # Initailize the window to have a border of yellow and not react to mouse events. We will create it in the draw_window function
         self.window = qtw.QWidget(self)
-        self.window.setStyleSheet("border:2px solid yellow; background:transparent;")
+        self.window.setStyleSheet("border:4px solid yellow; background:transparent;")
         self.window.setAttribute(qtc.Qt.WA_TransparentForMouseEvents,True)
         self.window.hide()
+        qtc.QTimer.singleShot(30, lambda: self.draw_window(self.base))
 
     def changeSliders(self, prop_delay:int, re_timer:int, per_pkt_loss:int, windowSize:int, num_packets:int):
         self.prop_delay = prop_delay
@@ -240,10 +244,14 @@ class SenderRecieverPanel(qtw.QWidget):
     # This function will update the number of sender reciever components on the users screen
     def setPackets(self):
 
+        # Clear any active packets before removing items
+        self.clear_active_packets()
+        
         # If the number of packets the user wants to send decreased, remove them from the UI
         while len(self.items) > self.num_packets:
             item = self.items.pop() # remove last element in the list of items
-            # delete that item from the UI
+            # mark as deleted and delete that item from the UI
+            item._is_deleted = True
             item.setParent(None)
             item.deleteLater()
 
@@ -310,13 +318,13 @@ class SenderRecieverPanel(qtw.QWidget):
     
     def on_ACK_arrived(self, ACK_num:int, sender_num:int):
         # If the ACK recieved is the correct next ACK, slide the window
-        if ACK_num - 1 == self.items[sender_num]:
+        if ACK_num == sender_num + 1:
             # slide window and draw it
             self.base += 1
-            self.draw_window(self.base, self.windowSize)
+            qtc.QTimer.singleShot(30, lambda: self.draw_window(self.base))
             # turn off functionality for the sender and reciever, turn them blue to indicate they are done
-            self.items[sender_num].isActive = False
-            self.items[sender_num].pb_sender.setStyleSheet(u"QPushButton#pb_sender {\n"
+            self.items[sender_num-1].isActive = False
+            self.items[sender_num-1].pb_sender.setStyleSheet(u"QPushButton#pb_sender {\n"
 "    background-color: blue;\n"
 "    border-style: outset;\n"
 "    border-width: 2px;\n"
@@ -330,7 +338,7 @@ class SenderRecieverPanel(qtw.QWidget):
 "    background-color: rgb(0, 224, 0);\n"
 "    border-style: inset;\n"
 "}")
-            self.items[sender_num].pb_reciever.setStyleSheet(u"QPushButton#pb_reciever {\n"
+            self.items[sender_num-1].pb_reciever.setStyleSheet(u"QPushButton#pb_reciever {\n"
 "    background-color: blue;\n"
 "    border-style: outset;\n"
 "    border-width: 2px;\n"
@@ -342,12 +350,17 @@ class SenderRecieverPanel(qtw.QWidget):
 "}\n"
 "")
             # after sliding the window send the next packet
-            self.send_packets(self.prop_delay, self.re_timer, self.per_pkt_loss, self.windowSize)
+            self.send_packets()
         # If the ACK recieved is not the next ACK needed, resend the packet
         else:
-            self.items[self.cur_ACK].send_packet(self.prop_delay, self.re_timer, self.per_pkt_loss)
-
-
-
-
+            if self.cur_ACK-1 < len(self.items):
+                self.items[self.cur_ACK-1].send_packet(self.prop_delay, self.re_timer, self.per_pkt_loss)
     
+    def clear_active_packets(self):
+        # Find and delete all Packet widgets that are children of this panel
+        for child in self.findChildren(Packet):
+            child.deleteLater()
+    
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        qtc.QTimer.singleShot(10, lambda: self.draw_window(self.base))

@@ -45,9 +45,7 @@ class SettingsWindow(qtw.QWidget, Ui_w_settings):
         # connect spinboxes to their respective functions
         self.spin_K.valueChanged.connect(self.update_spin_R_max)
         self.spin_K.valueChanged.connect(lambda: self.changed_num_packets.emit(self.spin_K.value()))
-
-
-
+        self.spin_R.valueChanged.connect(lambda: self.changed_window_size.emit(self.spin_R.value()))
 
     # These 3 functions will show the respective values in the labels next to the sliders
     def update_prop_delay(self):
@@ -68,4 +66,4 @@ class SettingsWindow(qtw.QWidget, Ui_w_settings):
         if(self.spin_R.value() > self.spin_K.value()):
             self.spin_R.setValue(self.spin_K.value())
         self.spin_R.setMaximum(self.spin_K.value()) # change window max size to the number of packets in the sim
-        self.changed_window_size.emit(self.spin_R.value())
+        

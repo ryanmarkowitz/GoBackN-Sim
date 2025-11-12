@@ -5,23 +5,29 @@ from PySide6 import QtGui as qtg
 from ui.play_and_reset_ui import Ui_w_play_and_reset
 
 class PlayandReset(qtw.QWidget, Ui_w_play_and_reset):
+    play_clicked = qtc.Signal()
+    reset_clicked = qtc.Signal()
+
     def __init__(self):
         super().__init__()
         self.setupUi(self)
 
         self.play = False # default start value should be that the animation is paused
-        self.pb_play.clicked.connect(self.play_clicked)
-        self.pb_reset.clicked.connect(self.reset_clicked)
+        self.pb_play.clicked.connect(self.on_play_clicked)
+        self.pb_reset.clicked.connect(self.on_reset_clicked)
 
-    def play_clicked(self):
+    def on_play_clicked(self):
         if not self.play:
             self.play = True
             self.pb_play.setText("Pause")
         else:
             self.play = False
             self.pb_play.setText("Play")
+        self.play_clicked.emit()
     
-    def reset_clicked(self):
-        pass
-        
+    def on_reset_clicked(self):
+        self.play = False
+        self.pb_play.setText("Play")
+        self.reset_clicked.emit()
+    
     

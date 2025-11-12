@@ -31,6 +31,9 @@ class MainWidget(qtw.QWidget):
         self.settings.changed_window_size.connect(self.changed_window_size)
         self.settings.changed_num_packets.connect(self.changed_num_packets)
 
+        self.play_and_reset.play_clicked.connect(self.play_clicked)
+        self.play_and_reset.reset_clicked.connect(self.reset_clicked)
+
         self.hosts_panel.changeSliders(self.prop_delay, self.re_timer, self.per_pkt_loss, self.window_size, self.num_packets)
         self.hosts_panel.draw_window(self.hosts_panel.base)
 
@@ -51,9 +54,28 @@ class MainWidget(qtw.QWidget):
     def changed_window_size(self, value:int):
         self.window_size = value
         self.hosts_panel.changeSliders(self.prop_delay, self.re_timer, self.per_pkt_loss, self.window_size, self.num_packets)
-        self.hosts_panel.draw_window(self.hosts_panel.base)
+        qtc.QTimer.singleShot(30, lambda: self.hosts_panel.draw_window(self.hosts_panel.base))
     def changed_num_packets(self, value:int):
         self.num_packets = value
         self.hosts_panel.changeSliders(self.prop_delay, self.re_timer, self.per_pkt_loss, self.window_size, self.num_packets)
         self.hosts_panel.setPackets()
-        self.hosts_panel.draw_window(self.hosts_panel.base)
+        qtc.QTimer.singleShot(30, lambda: self.hosts_panel.draw_window(self.hosts_panel.base))
+        
+    def play_clicked(self):
+        self.settings.setEnabled(False)
+        self.hosts_panel.send_packets()
+    def reset_clicked(self):
+        self.settings.setEnabled(True)
+        self.settings.sl_prop_delay.setValue(10)
+        self.settings.sl_re_timer.setValue(50)
+        self.settings.sl_pkt_loss_per.setValue(0)
+        self.hosts_panel.base = 0
+        self.hosts_panel.changeSliders(self.prop_delay, self.re_timer, self.per_pkt_loss, self.window_size, self.num_packets)
+        self.hosts_panel.cur_ACK = 1
+        self.settings.spin_K.setMinimum(0)
+        qtc.QTimer.singleShot(30, lambda: self.settings.spin_K.setValue(0))
+        qtc.QTimer.singleShot(30, lambda: self.settings.spin_K.setValue(10))
+        qtc.QTimer.singleShot(30, lambda: self.settings.spin_R.setValue(3))
+        qtc.QTimer.singleShot(30, lambda: self.hosts_panel.draw_window(self.hosts_panel.base))
+        qtc.QTimer.singleShot(30, lambda: self.settings.spin_K.setMinimum(1))
+        
