@@ -17,17 +17,15 @@ class PlayandReset(qtw.QWidget, Ui_w_play_and_reset):
         self.pb_reset.clicked.connect(self.on_reset_clicked)
 
     def on_play_clicked(self):
-        if not self.play:
-            self.play = True
-            self.pb_play.setText("Pause")
-        else:
-            self.play = False
-            self.pb_play.setText("Play")
+        self.play = True
+        self.pb_play.setEnabled(False)
         self.play_clicked.emit()
+
+        
     
     def on_reset_clicked(self):
         self.play = False
-        self.pb_play.setText("Play")
+        self.pb_play.setEnabled(True)
         self.reset_clicked.emit()
     
     
