@@ -1,8 +1,13 @@
+# Packet class represents individual data packets in the Go-Back-N simulation
+# Packets are animated buttons that move between sender and receiver
+
 from PySide6 import QtCore as qtc
 from PySide6 import QtWidgets as qtw
 from PySide6 import QtGui as qtg
 
 class Packet(qtw.QPushButton):
+    """Animated packet widget that can be sent between sender and receiver in Go-Back-N protocol"""
+    
     def __init__(self, parent=None):
         super().__init__(parent)
 
@@ -12,7 +17,7 @@ class Packet(qtw.QPushButton):
         self.killed = False # flag to indicate if the packet has been killed
         self.clicked.connect(self.kill) # connect the kill function to the click event
 
-        # initialize fade out logic
+        # initialize fade out logic for smooth packet removal
         self.fx_opacity = qtw.QGraphicsOpacityEffect(self)
         self.fx_opacity.setOpacity(1.0)
         self.setGraphicsEffect(self.fx_opacity)
@@ -29,7 +34,8 @@ class Packet(qtw.QPushButton):
         fade.start()
     
     def kill(self):
+        """Manually kill a packet when clicked by user (simulates packet loss)"""
         self.killed = True
-        self.anim.stop()
+        self.anim.stop()  # Stop any ongoing animation
         self.setStyleSheet("background-color: red;") # turn the packet red to show it has been killed
         self.fade_out_and_delete() # fade out and delete the packet
