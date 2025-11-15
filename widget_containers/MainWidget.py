@@ -7,7 +7,8 @@ from PySide6 import QtGui as qtg
 
 from widget_containers.Packet import Packet
 from widget_containers.PlayAndReset import PlayandReset
-from widget_containers.SenderReciever import SenderReciever, SenderRecieverPanel
+from widget_containers.SenderReciever import SenderReciever
+from widget_containers.SenderRecieverPanel import SenderRecieverPanel
 from widget_containers.SettingsWindow import SettingsWindow
 
 
