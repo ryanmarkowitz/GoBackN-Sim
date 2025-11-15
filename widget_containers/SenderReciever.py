@@ -41,10 +41,10 @@ class SenderReciever(qtw.QWidget, Ui_w_sender_reciever):
                 re_timer = re_timer *.1 # get proper retransmission timer
                 # create a packet and set the container to parent panel
                 pkt = Packet(parent = self.parent())
+                pkt.setText(f"Packet#{self.sender_num}")
                 # Get coordinates for where packet should start and end for animation
                 start = self.pb_sender.mapTo(self.parent(), qtc.QPoint(self.pb_sender.width()//2, self.pb_sender.height()//2))
                 end = self.pb_reciever.mapTo(self.parent(), qtc.QPoint(self.pb_reciever.width()//2, self.pb_reciever.height()//2))
-
                 # propagation delay is in terms of seconds, setDuration function expects ms
                 pkt.anim.setDuration(prop_delay*1000) # set duration of animation to the propagation delay
                 pkt.anim.setEasingCurve(qtc.QEasingCurve.InOutCirc) # set a nice ease in and out animation
@@ -58,7 +58,7 @@ class SenderReciever(qtw.QWidget, Ui_w_sender_reciever):
                 pkt.anim.setEndValue(end)
 
                 # set a timer for retransmission
-                qtc.QTimer.singleShot(re_timer*1000, lambda: self.send_retransmission(pkt, prop_delay, re_timer, per_pkt_loss))
+                qtc.QTimer.singleShot(re_timer*1000, lambda: self.send_retransmission(prop_delay*10, re_timer*10, per_pkt_loss))
 
                 # with a given percentage chance that a packet should be dropped, drop that packet halfway through the animation
                 should_drop = (random.randint(1,100) <= per_pkt_loss) or self.pktLose # determine if the packet should be dropped
@@ -66,60 +66,68 @@ class SenderReciever(qtw.QWidget, Ui_w_sender_reciever):
                     # Wait for half the moving animation to finish, then drop the packet
                     pkt.killed = True
                     qtc.QTimer.singleShot(prop_delay*1000/2, lambda: pkt.kill())
-                    
                     qtc.QTimer.singleShot(prop_delay*1000/2, lambda: pkt.setStyleSheet("background-color: red;"))
-                
+                    # if the sender was meant to drop the packet, set it back to being able to send
+                    if self.pktLose:
+                        qtc.QTimer.singleShot(prop_delay*1000/3, lambda: self.setSenderBack())
+
+                        
                 pkt.anim.start() # start animation
                 pkt.anim.finished.connect(lambda: self.packet_arrived(pkt))
+        
+
 
     def send_ACK(self, prop_delay:int, per_pkt_loss:int, ack_num:int):
-        if self.isActive:
-            self.sending = True
-            self.ACKrecieved = ack_num
-            self.pb_reciever.setStyleSheet(u"QPushButton#pb_reciever {\n"
-"    background-color: lightblue;\n"
-"    border-style: outset;\n"
-"    border-width: 2px;\n"
-"    border-radius: 10px;\n"
-"    border-color: beige;\n"
-"    font: bold 14px;\n"
-"    min-width: 10em;\n"
-"    padding: 6px;\n"
-"}\n"
-"") # turn reciever light blue to show it sent an ACK
-            prop_delay = prop_delay *.1 # get proper propagation delay
-            # create a packet and set the container to parent panel
-            pkt = Packet(parent = self.parent())
-            pkt.setText("ACK #"+str(ack_num-1)) # send the correct ACK
-            # Get coordinates for where packet should start and end for animation
-            start = self.pb_reciever.mapTo(self.parent(), qtc.QPoint(self.pb_reciever.width()//2, self.pb_reciever.height()//2))
-            end = self.pb_sender.mapTo(self.parent(), qtc.QPoint(self.pb_sender.width()//2, self.pb_sender.height()//2))
+        self.sending = True
+        self.ACKrecieved = ack_num
+        if ack_num == self.reciever_num+1:
+            if not "background-color: blue" in self.pb_reciever.styleSheet(): # if the reciever is not blue, it means the sender is sending a duplicate ACK
+                self.pb_reciever.setStyleSheet(u"QPushButton#pb_reciever {\n"
+        "    background-color: lightblue;\n"
+        "    border-style: outset;\n"
+        "    border-width: 2px;\n"
+        "    border-radius: 10px;\n"
+        "    border-color: beige;\n"
+        "    font: bold 14px;\n"
+        "    min-width: 10em;\n"
+        "    padding: 6px;\n"
+        "}\n"
+        "") # turn reciever light blue to show it sent an ACK
+        prop_delay = prop_delay *.1 # get proper propagation delay
+        # create a packet and set the container to parent panel
+        pkt = Packet(parent = self.parent())
+        pkt.setText("ACK #"+str(ack_num-1)) # send the correct ACK
+        # Get coordinates for where packet should start and end for animation
+        start = self.pb_reciever.mapTo(self.parent(), qtc.QPoint(self.pb_reciever.width()//2, self.pb_reciever.height()//2))
+        end = self.pb_sender.mapTo(self.parent(), qtc.QPoint(self.pb_sender.width()//2, self.pb_sender.height()//2))
 
-            # propagation delay is in terms of seconds, setDuration function expects ms
-            pkt.anim.setDuration(prop_delay*1000) # set duration of animation to the propagation delay
-            pkt.anim.setEasingCurve(qtc.QEasingCurve.InOutCirc) # set a nice ease in and out animation
+        # propagation delay is in terms of seconds, setDuration function expects ms
+        pkt.anim.setDuration(prop_delay*1000) # set duration of animation to the propagation delay
+        pkt.anim.setEasingCurve(qtc.QEasingCurve.InOutCirc) # set a nice ease in and out animation
 
-            pkt.move(start) # move packet to start position
-            pkt.show() # show packet on screen
-            pkt.raise_() # raise packet above all other widgets (so it is visible)
+        pkt.move(start) # move packet to start position
+        pkt.show() # show packet on screen
+        pkt.raise_() # raise packet above all other widgets (so it is visible)
 
-            # set start and end of animation
-            pkt.anim.setStartValue(start)
-            pkt.anim.setEndValue(end)
+        # set start and end of animation
+        pkt.anim.setStartValue(start)
+        pkt.anim.setEndValue(end)
 
-            # with a given percentage chance that a packet should be dropped, drop that packet halfway through the animation
-            should_drop = (random.randint(1,100) <= per_pkt_loss) # determine if the packet should be dropped
-            if should_drop:
-                # Wait for half the moving animation to finish, then drop the packet
-                pkt.killed = True
-                qtc.QTimer.singleShot(prop_delay*1000/2, lambda: pkt.fade_out_and_delete())
-                qtc.QTimer.singleShot(prop_delay*1000/2, lambda: pkt.setStyleSheet("background-color: red;"))
+        # with a given percentage chance that a packet should be dropped, drop that packet halfway through the animation
+        should_drop = (random.randint(1,100) <= per_pkt_loss) # determine if the packet should be dropped
+        if should_drop or self.ACKLose:
+            # Wait for half the moving animation to finish, then drop the packet
+            pkt.killed = True
+            qtc.QTimer.singleShot(prop_delay*1000/2, lambda: pkt.fade_out_and_delete())
+            qtc.QTimer.singleShot(prop_delay*1000/2, lambda: pkt.setStyleSheet("background-color: red;"))
+            if self.ACKLose:
+                qtc.QTimer.singleShot(prop_delay*1000/3, lambda: self.setReceiverBack())
 
-            pkt.anim.start() # start animation
-            pkt.anim.finished.connect(lambda: self.receivedACK(pkt)) 
+        pkt.anim.start() # start animation
+        pkt.anim.finished.connect(lambda: self.receivedACK(pkt)) 
     
     # If the sender never recieved an ACK resend the packet
-    def send_retransmission(self, pkt: Packet, prop_delay:int, re_timer:int, per_pkt_loss:int):
+    def send_retransmission(self, prop_delay:int, re_timer:int, per_pkt_loss:int):
         if self.isActive and not self._is_deleted:
             self.sending = False
             self.send_packet(prop_delay, re_timer, per_pkt_loss)
@@ -194,6 +202,37 @@ class SenderReciever(qtw.QWidget, Ui_w_sender_reciever):
 "    padding: 6px;\n"
 "}\n"
 "")
+
+    def setReceiverBack(self):
+        self.ACKLose = False
+        self.pb_reciever.setStyleSheet(u"QPushButton#pb_reciever {\n"
+"    background-color: orange;\n"
+"    border-style: outset;\n"
+"    border-width: 2px;\n"
+"    border-radius: 10px;\n"
+"    border-color: beige;\n"
+"    font: bold 14px;\n"
+"    min-width: 10em;\n"
+"    padding: 6px;\n"
+"}\n"
+"")
+
+    def setSenderBack(self):
+        self.pktLose = False
+        self.pb_sender.setStyleSheet(u"QPushButton#pb_sender {\n"
+"    background-color: lightgreen;\n"
+"    border-style: outset;\n"
+"    border-width: 2px;\n"
+"    border-radius: 10px;\n"
+"    border-color: beige;\n"
+"    font: bold 14px;\n"
+"    min-width: 10em;\n"
+"    padding: 6px;\n"
+"}\n"
+"QPushButton#pb_sender:pressed {\n"
+"    background-color: rgb(0, 224, 0);\n"
+"    border-style: inset;\n"
+"}")
 
     def packet_arrived(self, pkt:Packet):
         if not pkt.killed and not self._is_deleted:
@@ -305,56 +344,54 @@ class SenderRecieverPanel(qtw.QWidget):
         end = min(start + self.windowSize - 1, len(self.items) - 1) # get the end of the sending window
 
         for i in range(start, end + 1):
-            self.items[i].send_packet(self.prop_delay, self.re_timer, self.per_pkt_loss)
+            # add 30ms delay between each packet sent to simulate transmission delay
+            qtc.QTimer.singleShot((50 * (i % self.windowSize)), lambda i=i: self.items[i].send_packet(self.prop_delay, self.re_timer, self.per_pkt_loss))
+        
                 
     def on_packet_arrived(self, sender_num:int):
-        # If the handshake hasn't finished yet, send an ACK
-        if self.items[sender_num-1].isActive:
-            # If the packet that arrived is the next ACK needed, increase ACK
-            if sender_num == self.cur_ACK:
-                self.cur_ACK += 1
-            # either send the next ACK, or keep sending previous ACK
-            self.items[sender_num-1].send_ACK(self.prop_delay, self.per_pkt_loss, self.cur_ACK)
+        # If the packet that arrived is the next ACK needed, increase ACK
+        if sender_num == self.cur_ACK:
+            self.cur_ACK += 1
+        # either send the next ACK, or keep sending previous ACK
+        self.items[sender_num-1].send_ACK(self.prop_delay, self.per_pkt_loss, self.cur_ACK)
     
     def on_ACK_arrived(self, ACK_num:int, sender_num:int):
         # If the ACK recieved is the correct next ACK, slide the window
-        if ACK_num == sender_num + 1:
+        if ACK_num >= sender_num + 1:
             # slide window and draw it
-            self.base += 1
+            if sender_num > self.base:
+                self.base = sender_num 
             qtc.QTimer.singleShot(30, lambda: self.draw_window(self.base))
             # turn off functionality for the sender and reciever, turn them blue to indicate they are done
-            self.items[sender_num-1].isActive = False
-            self.items[sender_num-1].pb_sender.setStyleSheet(u"QPushButton#pb_sender {\n"
-"    background-color: blue;\n"
-"    border-style: outset;\n"
-"    border-width: 2px;\n"
-"    border-radius: 10px;\n"
-"    border-color: beige;\n"
-"    font: bold 14px;\n"
-"    min-width: 10em;\n"
-"    padding: 6px;\n"
-"}\n"
-"QPushButton#pb_sender:pressed {\n"
-"    background-color: rgb(0, 224, 0);\n"
-"    border-style: inset;\n"
-"}")
-            self.items[sender_num-1].pb_reciever.setStyleSheet(u"QPushButton#pb_reciever {\n"
-"    background-color: blue;\n"
-"    border-style: outset;\n"
-"    border-width: 2px;\n"
-"    border-radius: 10px;\n"
-"    border-color: beige;\n"
-"    font: bold 14px;\n"
-"    min-width: 10em;\n"
-"    padding: 6px;\n"
-"}\n"
-"")
-            # after sliding the window send the next packet
-            self.send_packets()
-        # If the ACK recieved is not the next ACK needed, resend the packet
-        else:
-            if self.cur_ACK-1 < len(self.items):
-                self.items[self.cur_ACK-1].send_packet(self.prop_delay, self.re_timer, self.per_pkt_loss)
+            for i in range(sender_num):
+                self.items[i].isActive = False
+                self.items[i].pb_sender.setStyleSheet(u"QPushButton#pb_sender {\n"
+    "    background-color: blue;\n"
+    "    border-style: outset;\n"
+    "    border-width: 2px;\n"
+    "    border-radius: 10px;\n"
+    "    border-color: beige;\n"
+    "    font: bold 14px;\n"
+    "    min-width: 10em;\n"
+    "    padding: 6px;\n"
+    "}\n"
+    "QPushButton#pb_sender:pressed {\n"
+    "    background-color: rgb(0, 224, 0);\n"
+    "    border-style: inset;\n"
+    "}")
+                self.items[i].pb_reciever.setStyleSheet(u"QPushButton#pb_reciever {\n"
+    "    background-color: blue;\n"
+    "    border-style: outset;\n"
+    "    border-width: 2px;\n"
+    "    border-radius: 10px;\n"
+    "    border-color: beige;\n"
+    "    font: bold 14px;\n"
+    "    min-width: 10em;\n"
+    "    padding: 6px;\n"
+    "}\n"
+    "")
+                # after sliding the window send the next packet
+                self.send_packets()
     
     def clear_active_packets(self):
         # Find and delete all Packet widgets that are children of this panel

@@ -15,7 +15,7 @@ class MainWidget(qtw.QWidget):
         # initial starting values for settings
         self.re_timer = 50
         self.per_pkt_loss = 0
-        self.prop_delay = 10
+        self.prop_delay = 20
         self.window_size = 3
         self.num_packets = 10
 
@@ -66,7 +66,8 @@ class MainWidget(qtw.QWidget):
         self.hosts_panel.send_packets()
     def reset_clicked(self):
         self.settings.setEnabled(True)
-        self.settings.sl_prop_delay.setValue(10)
+        self.settings.sl_prop_delay.setValue(20)
+        self.settings.sl_re_timer.setRange(50, 100)
         self.settings.sl_re_timer.setValue(50)
         self.settings.sl_pkt_loss_per.setValue(0)
         self.hosts_panel.base = 0

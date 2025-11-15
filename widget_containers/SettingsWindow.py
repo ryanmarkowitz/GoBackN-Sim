@@ -24,13 +24,13 @@ class SettingsWindow(qtw.QWidget, Ui_w_settings):
         # propagation delay can range from .5 to 2 seconds. multiply cur by .1 to get correct value
         # propagation delay is the slider for animation speed for the sim essentially
         self.sl_prop_delay.setTickInterval(1)
-        self.sl_prop_delay.setValue(10) # initial propagation delay will be 1 second
-        self.sl_prop_delay.setRange(5, 20)
+        self.sl_prop_delay.setValue(20) # initial propagation delay will be 1 second
+        self.sl_prop_delay.setRange(20, 50)
 
         # retransmission timer will range from 3-10 seconds. Multiply cur by .1 to get correct value
         self.sl_re_timer.setTickInterval(1)
         self.sl_re_timer.setValue(50) # initial retransmission timer will be set to 5 seconds
-        self.sl_re_timer.setRange(30, 100)
+        self.sl_re_timer.setRange(50, 100)
 
         # set initial value of packet loss chance percentage to 0%
         self.sl_pkt_loss_per.setValue(0)
@@ -51,6 +51,9 @@ class SettingsWindow(qtw.QWidget, Ui_w_settings):
     def update_prop_delay(self):
         seconds = self.sl_prop_delay.value()*.1
         self.lbl_prop_delay.setText(f"{seconds:.1f}s")
+        self.sl_re_timer.setRange((self.sl_prop_delay.value()*2)+10, (self.sl_prop_delay.value()*2)+80)
+        if (self.sl_re_timer.value() - self.sl_prop_delay.value() <= 30):
+            self.sl_re_timer.setValue((self.sl_prop_delay.value()*2)+10)
         self.changed_prop.emit(self.sl_prop_delay.value())
     def update_re_timer(self):
         seconds = self.sl_re_timer.value()*.1
