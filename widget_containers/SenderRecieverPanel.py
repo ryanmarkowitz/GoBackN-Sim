@@ -3,6 +3,7 @@ from PySide6 import QtWidgets as qtw
 from PySide6 import QtGui as qtg
 
 from widget_containers.SenderReciever import SenderReciever
+from widget_containers.Packet import Packet
 
 # This class will create a vertical panel of all our packets that need to be sent
 class SenderRecieverPanel(qtw.QWidget):
