@@ -2,6 +2,31 @@
 
 A visual simulation of the Go-Back-N automatic repeat request (ARQ) protocol used in computer networking. This interactive tool demonstrates how reliable data transmission works over unreliable networks.
 
+## How to Run the Program
+
+You can launch the **GoBackNSim.exe** file if on **windows.** Alternatively, you can install the python dependencies, and run it via python in the command terminal. The easiest way to do this is by creating a virtual environment. First, make sure you have Python installed and added to your environment path. Then open command terminal in the working directory. You can do this by right clicking the directory and pressing "open in terminal", or you can run:
+```bash
+cd /path/to/dir/GoBackN-Sim # use backward slashes (\) if on windows. also make sure to replace /path/to/dir with your actual path to the directory (folder where this program is stored on your computer)
+```
+Then run:
+```bash
+python3 -m venv venv # make sure python is installed and added to environment path
+```
+Then we can activate that virtual environment. This can be done by running:
+```bash
+.\venv\Scripts\activate # if on windows
+source venv/bin/activate # if on mac or linux
+```
+After activating the virtual environment, you need to install the dependencies. To do this run:
+```bash
+python -m pip install -r requirements.txt
+# Run the line below if that didn't work
+python -m pip install pyside6
+```
+The dependencies should now be installed. You should now be able to run the program from the command line. Make sure you're still in the **working directory,** your **venv** is turned on. _(you can activate it again if needed. No need to run python3 -m venv venv again, the venv only needs to be created once)_ Then run:
+```bash
+python main.py
+```
 ## What is Go-Back-N?
 
 Go-Back-N is a sliding window protocol used to ensure reliable data transmission between a sender and receiver over an unreliable communication channel. It's one of the fundamental protocols in computer networking that handles packet loss, corruption, and out-of-order delivery.
@@ -190,3 +215,4 @@ When both sender and receiver turn solid blue, the "handshake" for that packet i
   - Starting a new simulation with different parameters
   - Stopping a simulation that's taking too long
   - Clearing manual loss configurations
+
