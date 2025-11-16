@@ -18,6 +18,8 @@ class MainWidget(qtw.QWidget):
     def __init__(self):
         super().__init__()
 
+        self.setMinimumSize(900,700)
+
         # initial starting values for settings (Go-Back-N protocol parameters)
         self.re_timer = 50          # Retransmission timer value
         self.per_pkt_loss = 0       # Packet loss percentage
@@ -30,6 +32,12 @@ class MainWidget(qtw.QWidget):
         self.settings = SettingsWindow()        # Settings panel for protocol parameters
         self.play_and_reset = PlayandReset()    # Control buttons for simulation
         self.hosts_panel = SenderRecieverPanel() # Main simulation area
+
+        # add scrollable area for better error handling if it gets too big
+        self.scroll_area = qtw.QScrollArea()
+        self.scroll_area.setWidgetResizable(True)
+        self.scroll_area.setHorizontalScrollBarPolicy(qtc.Qt.ScrollBarAlwaysOff) 
+        self.scroll_area.setWidget(self.hosts_panel)
 
         # Connect settings changes to update handlers
         self.settings.changed_re_timer.connect(self.changed_re_timer)
@@ -49,7 +57,7 @@ class MainWidget(qtw.QWidget):
         # Arrange widgets vertically in the main window
         self.vbox.addWidget(self.settings)
         self.vbox.addWidget(self.play_and_reset)
-        self.vbox.addWidget(self.hosts_panel)
+        self.vbox.addWidget(self.scroll_area)
     
     # Settings change handlers - update simulation parameters when user modifies settings
     
@@ -73,7 +81,7 @@ class MainWidget(qtw.QWidget):
         self.window_size = value
         self.hosts_panel.changeSliders(self.prop_delay, self.re_timer, self.per_pkt_loss, self.window_size, self.num_packets)
         # Redraw window after brief delay to ensure UI updates are complete
-        qtc.QTimer.singleShot(30, lambda: self.hosts_panel.draw_window(self.hosts_panel.base))
+        qtc.QTimer.singleShot(50, lambda: self.hosts_panel.draw_window(self.hosts_panel.base))
         
     def changed_num_packets(self, value:int):
         """Update total number of packets and recreate packet UI elements"""
@@ -81,7 +89,7 @@ class MainWidget(qtw.QWidget):
         self.hosts_panel.changeSliders(self.prop_delay, self.re_timer, self.per_pkt_loss, self.window_size, self.num_packets)
         self.hosts_panel.setPackets()  # Recreate packet widgets to match new count
         # Redraw window after brief delay to ensure UI updates are complete
-        qtc.QTimer.singleShot(30, lambda: self.hosts_panel.draw_window(self.hosts_panel.base))
+        qtc.QTimer.singleShot(50, lambda: self.hosts_panel.draw_window(self.hosts_panel.base))
         
     def play_clicked(self):
         """Start the Go-Back-N simulation - disable settings and begin packet transmission"""
@@ -105,9 +113,9 @@ class MainWidget(qtw.QWidget):
         
         # Reset spinbox values with proper sequencing to avoid validation issues
         self.settings.spin_K.setMinimum(0)  # Temporarily allow 0 to reset cleanly
-        qtc.QTimer.singleShot(30, lambda: self.settings.spin_K.setValue(0))
-        qtc.QTimer.singleShot(30, lambda: self.settings.spin_K.setValue(10))
-        qtc.QTimer.singleShot(30, lambda: self.settings.spin_R.setValue(3))
-        qtc.QTimer.singleShot(30, lambda: self.hosts_panel.draw_window(self.hosts_panel.base))
-        qtc.QTimer.singleShot(30, lambda: self.settings.spin_K.setMinimum(1))  # Restore minimum
+        qtc.QTimer.singleShot(50, lambda: self.settings.spin_K.setValue(0))
+        qtc.QTimer.singleShot(100, lambda: self.settings.spin_K.setValue(10))
+        qtc.QTimer.singleShot(150, lambda: self.settings.spin_R.setValue(3))
+        qtc.QTimer.singleShot(100, lambda: self.hosts_panel.draw_window(self.hosts_panel.base))
+        qtc.QTimer.singleShot(100, lambda: self.settings.spin_K.setMinimum(1))  # Restore minimum
         

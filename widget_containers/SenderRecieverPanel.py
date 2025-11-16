@@ -45,7 +45,7 @@ class SenderRecieverPanel(qtw.QWidget):
         self.window.setAttribute(qtc.Qt.WA_TransparentForMouseEvents,True)  # Allow clicks through
         self.window.hide()  # Initially hidden
         # Draw initial window after brief delay to ensure UI is ready
-        qtc.QTimer.singleShot(30, lambda: self.draw_window(self.base))
+        qtc.QTimer.singleShot(50, lambda: self.draw_window(self.base))
 
     def changeSliders(self, prop_delay:int, re_timer:int, per_pkt_loss:int, windowSize:int, num_packets:int):
         """Update simulation parameters from settings panel
@@ -175,7 +175,7 @@ class SenderRecieverPanel(qtw.QWidget):
             # Slide window forward (Go-Back-N window advancement)
             if sender_num > self.base:
                 self.base = sender_num 
-            qtc.QTimer.singleShot(30, lambda: self.draw_window(self.base))  # Update window visualization
+            qtc.QTimer.singleShot(50, lambda: self.draw_window(self.base))  # Update window visualization
             
             # Mark acknowledged sender-receiver pairs as completed
             for i in range(sender_num):
@@ -218,4 +218,4 @@ class SenderRecieverPanel(qtw.QWidget):
         """Handle window resize - redraw sliding window overlay to match new layout"""
         super().resizeEvent(event)
         # Redraw window after brief delay to ensure layout is complete
-        qtc.QTimer.singleShot(10, lambda: self.draw_window(self.base))
+        qtc.QTimer.singleShot(50, lambda: self.draw_window(self.base))
