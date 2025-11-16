@@ -4,7 +4,7 @@ A visual simulation of the Go-Back-N automatic repeat request (ARQ) protocol use
 
 ## How to Run the Program
 
-You can launch the **GoBackNSim.exe** file if on **windows.** Alternatively, you can install the python dependencies, and run it via python in the command terminal. The easiest way to do this is by creating a virtual environment. First, make sure you have Python installed and added to your environment path. Then open command terminal in the working directory. You can do this by right clicking the directory and pressing "open in terminal", or you can run:
+You can launch the **GoBackNSim.exe** file if on **windows. Alternatively,** you can install the python dependencies, and run it via **python in the command terminal.** The easiest way to do this is by creating a virtual environment. First, make sure you have Python installed and added to your environment path. Then open command terminal in the working directory. You can do this by right clicking the directory and pressing "open in terminal", or you can run:
 ```bash
 cd /path/to/dir/GoBackN-Sim # use backward slashes (\) if on windows. also make sure to replace /path/to/dir with your actual path to the directory (folder where this program is stored on your computer)
 ```
